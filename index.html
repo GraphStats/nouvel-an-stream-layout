@@ -414,14 +414,15 @@
         <footer class="footer-section">
             <div class="glass-panel marathon-box">
                 <div class="marathon-header">
-                    <span class="marathon-label">Évènement Mondial</span>
+                    <span id="marathon-label-text" class="marathon-label">Évènement Mondial</span>
                     <span class="marathon-percent"><span id="percent-val">0</span>%</span>
                 </div>
                 <div class="progress-container">
                     <div id="percent-bar" class="progress-bar"></div>
                 </div>
                 <div style="font-size: 0.7rem; opacity: 0.4; margin-top: 5px; text-align: right;">
-                    Fin du marathon: <span id="marathon-total-h">00</span>h <span id="marathon-total-m">00</span>m
+                    <span id="marathon-timer-label">Fin du marathon:</span> <span id="marathon-total-h">00</span>h <span
+                        id="marathon-total-m">00</span>m
                     restant
                 </div>
             </div>
@@ -516,16 +517,38 @@
             updateTicker(passed);
             updateSidebars(upcoming, passed);
 
-            const lastTZ = timezones[timezones.length - 1];
-            const msUntilEnd = getTimeUntilNewYear(lastTZ.id);
-            const realProgress = (passed.length / timezones.length) * 100;
+            // --- PROGRESS BAR LOGIC ---
+            if (passed.length === 0) {
+                const now = new Date();
+                const start2025 = new Date(Date.UTC(2025, 0, 1)).getTime();
+                const end2025 = new Date(Date.UTC(2026, 0, 1)).getTime();
+                const yearProgress = ((now.getTime() - start2025) / (end2025 - start2025)) * 100;
 
-            document.getElementById('percent-val').innerHTML = realProgress.toFixed(2);
-            document.getElementById('percent-bar').style.width = `${realProgress}%`;
+                document.getElementById('marathon-label-text').innerText = "ANNÉE 2025";
+                document.getElementById('percent-val').innerHTML = yearProgress.toFixed(18);
+                document.getElementById('percent-bar').style.width = `${yearProgress}%`;
 
-            const endT = formatTime(Math.max(0, msUntilEnd));
-            document.getElementById('marathon-total-h').innerHTML = endT.totalH;
-            document.getElementById('marathon-total-m').innerHTML = endT.m;
+                if (upcoming.length > 0) {
+                    const msUntilStart = upcoming[0].ms;
+                    const startT = formatTime(Math.max(0, msUntilStart));
+                    document.getElementById('marathon-timer-label').innerText = "Début des festivités:";
+                    document.getElementById('marathon-total-h').innerHTML = startT.totalH;
+                    document.getElementById('marathon-total-m').innerHTML = startT.m;
+                }
+            } else {
+                const lastTZ = timezones[timezones.length - 1];
+                const msUntilEnd = getTimeUntilNewYear(lastTZ.id);
+                const eventProgress = (passed.length / timezones.length) * 100;
+
+                document.getElementById('marathon-label-text').innerText = "ÉVÈNEMENT MONDIAL";
+                document.getElementById('percent-val').innerHTML = eventProgress.toFixed(2);
+                document.getElementById('percent-bar').style.width = `${eventProgress}%`;
+
+                const endT = formatTime(Math.max(0, msUntilEnd));
+                document.getElementById('marathon-timer-label').innerText = "Fin du marathon:";
+                document.getElementById('marathon-total-h').innerHTML = endT.totalH;
+                document.getElementById('marathon-total-m').innerHTML = endT.m;
+            }
         }
 
         function triggerCelebration() {
@@ -564,7 +587,7 @@
             `).join('');
         }
 
-        setInterval(update, 1000);
+        setInterval(update, 50);
         update();
 
         // --- FIREWORKS ANIMATION ---
