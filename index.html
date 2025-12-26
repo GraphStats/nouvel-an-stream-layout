@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream New Year Countdown</title>
+
+    <!-- Google Fonts: Roboto Black -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap" rel="stylesheet">
+
+    <!-- Odometer.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/odometer/themes/odometer-theme-minimal.css" />
+    <script src="https://cdn.jsdelivr.net/npm/odometer/odometer.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #ffffff;
+            --accent-main: #ffcc00;
+            --accent-sec: #00f2ff;
+            --accent-tri: #7d2ae8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-strong: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.1);
+            --glow: 0 0 15px rgba(255, 204, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #background-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .overlay {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: grid;
+            grid-template-areas:
+                "header header header"
+                "sidebar main main"
+                "sidebar main main"
+                "footer footer footer";
+            grid-template-columns: 350px 1fr 1fr;
+            grid-template-rows: 60px 1fr 1fr 120px;
+            gap: 15px;
+            padding: 20px;
+            background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+        }
+
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-section {
+            grid-area: header;
+            display: flex;
+            align-items: center;
+            background: var(--glass-strong);
+        }
+
+        .ticker-label {
+            background: var(--accent-tri);
+            padding: 0 20px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .ticker-wrap {
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-move {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker 60s linear infinite;
+            font-size: 1.2rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
+            }
+        }
+
+        .ticker-city {
+            display: inline-block;
+            margin-right: 50px;
+        }
+
+        .ticker-city span {
+            color: var(--accent-sec);
+            font-weight: 900;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-sec);
+            margin-bottom: 10px;
+            font-weight: 900;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .city-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .city-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-sec);
+        }
+
+        .city-item.upcoming {
+            border-left-color: var(--accent-main);
+        }
+
+        .city-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .city-time {
+            font-size: 0.75rem;
+            opacity: 0.6;
+        }
+
+        .main-section {
+            grid-area: main;
+            display: grid;
+            grid-template-areas:
+                "top top"
+                "mid1 mid2";
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1.5fr 1fr;
+            gap: 15px;
+        }
+
+        .main-countdown-box {
+            grid-area: top;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+            background: radial-gradient(circle at center, rgba(125, 42, 232, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        }
+
+        .main-label {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--accent-main);
+            text-shadow: var(--glow);
+            margin-bottom: 20px;
+        }
+
+        .countdown-display {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .main-clock {
+            font-size: 11vw;
+            line-height: 1;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .sub-clock {
+            font-size: 4vw;
+            line-height: 1;
+            font-weight: 900;
+        }
+
+        .sub-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .sub-section .main-label {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: var(--accent-sec);
+        }
+
+        .footer-section {
+            grid-area: footer;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .marathon-box {
+            padding: 15px 25px;
+            justify-content: center;
+        }
+
+        .marathon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+        }
+
+        .marathon-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.6;
+        }
+
+        .marathon-percent {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--accent-main);
+        }
+
+        .progress-container {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-tri), var(--accent-main));
+            width: 0%;
+            transition: width 1s ease;
+            box-shadow: 0 0 20px var(--accent-tri);
+        }
+
+        .stat-box {
+            text-align: center;
+            justify-content: center;
+        }
+
+        .stat-val {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            letter-spacing: 1px;
+        }
+
+        .odometer {
+            font-family: 'Roboto', sans-serif !important;
+        }
+
+        .odometer.odometer-animating-up .odometer-ribbon-inner,
+        .odometer.odometer-animating-down.odometer-animating .odometer-ribbon-inner {
+            transition-duration: 1s !important;
+        }
+
+        .rank-tag {
+            position: absolute;
+            top: 31px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.5);
+            z-index: 20;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .celebration-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="celebration-flash" class="celebration-flash"></div>
+    <canvas id="background-canvas"></canvas>
+
+    <div class="overlay">
+        <div class="rank-tag">LIVE STREAM • NEW YEAR 2026</div>
+
+        <header class="glass-panel header-section">
+            <div class="ticker-wrap">
+                <div id="celebrations-ticker" class="ticker-move">
+                    <!-- Cities will be injected here -->
+                </div>
+            </div>
+        </header>
+
+        <aside class="glass-panel sidebar">
+            <div class="sidebar-title">Prochaines Étapes</div>
+            <div id="upcoming-cities" class="city-list">
+                <!-- Injected -->
+            </div>
+
+            <div class="sidebar-title" style="margin-top:20px;">Dernièrement</div>
+            <div id="passed-cities" class="city-list">
+                <!-- Injected -->
+            </div>
+        </aside>
+
+        <main class="main-section">
+            <div class="glass-panel main-countdown-box">
+                <div id="label-main" class="main-label">En attente...</div>
+                <div class="countdown-display">
+                    <div id="main-h" class="odometer main-clock">00</div>
+                    <div class="main-clock">:</div>
+                    <div id="main-m" class="odometer main-clock">00</div>
+                    <div class="main-clock">:</div>
+                    <div id="main-s" class="odometer main-clock">00</div>
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.4; margin-top: 10px;">Temps restant avant le prochain passage
+                </div>
+            </div>
+
+            <div class="glass-panel sub-section" style="grid-area: mid1;">
+                <div id="label-sub1" class="main-label">---</div>
+                <div class="countdown-display">
+                    <div id="sub1-h" class="odometer sub-clock">00</div>
+                    <div class="sub-clock">:</div>
+                    <div id="sub1-m" class="odometer sub-clock">00</div>
+                    <div class="sub-clock">:</div>
+                    <div id="sub1-s" class="odometer sub-clock">00</div>
+                </div>
+            </div>
+
+            <div class="glass-panel sub-section" style="grid-area: mid2;">
+                <div id="label-sub2" class="main-label">---</div>
+                <div class="countdown-display">
+                    <div id="sub2-h" class="odometer sub-clock">00</div>
+                    <div class="sub-clock">:</div>
+                    <div id="sub2-m" class="odometer sub-clock">00</div>
+                    <div class="sub-clock">:</div>
+                    <div id="sub2-s" class="odometer sub-clock">00</div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer-section">
+            <div class="glass-panel marathon-box">
+                <div class="marathon-header">
+                    <span class="marathon-label">Évènement Mondial</span>
+                    <span class="marathon-percent"><span id="percent-val">0</span>%</span>
+                </div>
+                <div class="progress-container">
+                    <div id="percent-bar" class="progress-bar"></div>
+                </div>
+                <div style="font-size: 0.7rem; opacity: 0.4; margin-top: 5px; text-align: right;">
+                    Fin du marathon: <span id="marathon-total-h">00</span>h <span id="marathon-total-m">00</span>m
+                    restant
+                </div>
+            </div>
+
+            <div class="glass-panel stat-box">
+                <div id="passed-count" class="odometer stat-val">0</div>
+                <div class="stat-label">Zones en 2026</div>
+            </div>
+
+            <div class="glass-panel stat-box">
+                <div id="remaining-count" class="odometer stat-val">0</div>
+                <div class="stat-label">Zones restantes</div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- TIMEZONE DATA ---
+        const timezones = [{ "id": "Pacific/Kiritimati", "label": "UTC +14 - Kiritimati" }, { "id": "Pacific/Chatham", "label": "UTC +13:45 - Chatham" }, { "id": "Antarctica/McMurdo", "label": "UTC +13 - McMurdo" }, { "id": "Pacific/Apia", "label": "UTC +13 - Apia" }, { "id": "Pacific/Auckland", "label": "UTC +13 - Auckland" }, { "id": "Pacific/Enderbury", "label": "UTC +13 - Enderbury" }, { "id": "Pacific/Fakaofo", "label": "UTC +13 - Fakaofo" }, { "id": "Pacific/Tongatapu", "label": "UTC +13 - Tongatapu" }, { "id": "Asia/Anadyr", "label": "UTC +12 - Anadyr" }, { "id": "Asia/Kamchatka", "label": "UTC +12 - Kamchatka" }, { "id": "Pacific/Fiji", "label": "UTC +12 - Fiji" }, { "id": "Pacific/Funafuti", "label": "UTC +12 - Funafuti" }, { "id": "Pacific/Kwajalein", "label": "UTC +12 - Kwajalein" }, { "id": "Pacific/Majuro", "label": "UTC +12 - Majuro" }, { "id": "Pacific/Nauru", "label": "UTC +12 - Nauru" }, { "id": "Pacific/Norfolk", "label": "UTC +12 - Norfolk" }, { "id": "Pacific/Tarawa", "label": "UTC +12 - Tarawa" }, { "id": "Pacific/Wake", "label": "UTC +12 - Wake" }, { "id": "Pacific/Wallis", "label": "UTC +12 - Wallis" }, { "id": "Antarctica/Macquarie", "label": "UTC +11 - Macquarie" }, { "id": "Asia/Magadan", "label": "UTC +11 - Magadan" }, { "id": "Asia/Sakhalin", "label": "UTC +11 - Sakhalin" }, { "id": "Asia/Srednekolymsk", "label": "UTC +11 - Srednekolymsk" }, { "id": "Australia/Hobart", "label": "UTC +11 - Hobart" }, { "id": "Australia/Lord_Howe", "label": "UTC +11 - Lord Howe" }, { "id": "Australia/Melbourne", "label": "UTC +11 - Melbourne" }, { "id": "Australia/Sydney", "label": "UTC +11 - Sydney" }, { "id": "Pacific/Bougainville", "label": "UTC +11 - Bougainville" }, { "id": "Pacific/Efate", "label": "UTC +11 - Efate" }, { "id": "Pacific/Guadalcanal", "label": "UTC +11 - Guadalcanal" }, { "id": "Pacific/Kosrae", "label": "UTC +11 - Kosrae" }, { "id": "Pacific/Noumea", "label": "UTC +11 - Noumea" }, { "id": "Pacific/Ponape", "label": "UTC +11 - Ponape" }, { "id": "Australia/Adelaide", "label": "UTC +10:30 - Adelaide" }, { "id": "Australia/Broken_Hill", "label": "UTC +10:30 - Broken Hill" }, { "id": "Antarctica/DumontDUrville", "label": "UTC +10 - DumontDUrville" }, { "id": "Asia/Ust-Nera", "label": "UTC +10 - Ust-Nera" }, { "id": "Asia/Vladivostok", "label": "UTC +10 - Vladivostok" }, { "id": "Australia/Brisbane", "label": "UTC +10 - Brisbane" }, { "id": "Australia/Lindeman", "label": "UTC +10 - Lindeman" }, { "id": "Pacific/Guam", "label": "UTC +10 - Guam" }, { "id": "Pacific/Port_Moresby", "label": "UTC +10 - Port Moresby" }, { "id": "Pacific/Saipan", "label": "UTC +10 - Saipan" }, { "id": "Pacific/Truk", "label": "UTC +10 - Truk" }, { "id": "Australia/Darwin", "label": "UTC +9:30 - Darwin" }, { "id": "Asia/Chita", "label": "UTC +9 - Chita" }, { "id": "Asia/Dili", "label": "UTC +9 - Dili" }, { "id": "Asia/Jayapura", "label": "UTC +9 - Jayapura" }, { "id": "Asia/Khandyga", "label": "UTC +9 - Khandyga" }, { "id": "Asia/Pyongyang", "label": "UTC +9 - Pyongyang" }, { "id": "Asia/Seoul", "label": "UTC +9 - Seoul" }, { "id": "Asia/Tokyo", "label": "UTC +9 - Tokyo" }, { "id": "Asia/Yakutsk", "label": "UTC +9 - Yakutsk" }, { "id": "Pacific/Palau", "label": "UTC +9 - Palau" }, { "id": "Australia/Eucla", "label": "UTC +8:45 - Eucla" }, { "id": "Antarctica/Casey", "label": "UTC +8 - Casey" }, { "id": "Asia/Brunei", "label": "UTC +8 - Brunei" }, { "id": "Asia/Hong_Kong", "label": "UTC +8 - Hong Kong" }, { "id": "Asia/Irkutsk", "label": "UTC +8 - Irkutsk" }, { "id": "Asia/Kuala_Lumpur", "label": "UTC +8 - Kuala Lumpur" }, { "id": "Asia/Kuching", "label": "UTC +8 - Kuching" }, { "id": "Asia/Macau", "label": "UTC +8 - Macau" }, { "id": "Asia/Makassar", "label": "UTC +8 - Makassar" }, { "id": "Asia/Manila", "label": "UTC +8 - Manila" }, { "id": "Asia/Shanghai", "label": "UTC +8 - Shanghai" }, { "id": "Asia/Singapore", "label": "UTC +8 - Singapore" }, { "id": "Asia/Taipei", "label": "UTC +8 - Taipei" }, { "id": "Asia/Ulaanbaatar", "label": "UTC +8 - Ulaanbaatar" }, { "id": "Australia/Perth", "label": "UTC +8 - Perth" }, { "id": "Antarctica/Davis", "label": "UTC +7 - Davis" }, { "id": "Asia/Bangkok", "label": "UTC +7 - Bangkok" }, { "id": "Asia/Barnaul", "label": "UTC +7 - Barnaul" }, { "id": "Asia/Hovd", "label": "UTC +7 - Hovd" }, { "id": "Asia/Jakarta", "label": "UTC +7 - Jakarta" }, { "id": "Asia/Krasnoyarsk", "label": "UTC +7 - Krasnoyarsk" }, { "id": "Asia/Novokuznetsk", "label": "UTC +7 - Novokuznetsk" }, { "id": "Asia/Novosibirsk", "label": "UTC +7 - Novosibirsk" }, { "id": "Asia/Phnom_Penh", "label": "UTC +7 - Phnom Penh" }, { "id": "Asia/Pontianak", "label": "UTC +7 - Pontianak" }, { "id": "Asia/Saigon", "label": "UTC +7 - Saigon" }, { "id": "Asia/Tomsk", "label": "UTC +7 - Tomsk" }, { "id": "Asia/Vientiane", "label": "UTC +7 - Vientiane" }, { "id": "Indian/Christmas", "label": "UTC +7 - Christmas" }, { "id": "Asia/Rangoon", "label": "UTC +6:30 - Rangoon" }, { "id": "Indian/Cocos", "label": "UTC +6:30 - Cocos" }, { "id": "Asia/Bishkek", "label": "UTC +6 - Bishkek" }, { "id": "Asia/Dhaka", "label": "UTC +6 - Dhaka" }, { "id": "Asia/Omsk", "label": "UTC +6 - Omsk" }, { "id": "Asia/Thimphu", "label": "UTC +6 - Thimphu" }, { "id": "Asia/Urumqi", "label": "UTC +6 - Urumqi" }, { "id": "Indian/Chagos", "label": "UTC +6 - Chagos" }, { "id": "Asia/Katmandu", "label": "UTC +5:45 - Katmandu" }, { "id": "Asia/Calcutta", "label": "UTC +5:30 - Calcutta" }, { "id": "Asia/Colombo", "label": "UTC +5:30 - Colombo" }, { "id": "Antarctica/Mawson", "label": "UTC +5 - Mawson" }, { "id": "Antarctica/Vostok", "label": "UTC +5 - Vostok" }, { "id": "Asia/Almaty", "label": "UTC +5 - Almaty" }, { "id": "Asia/Aqtau", "label": "UTC +5 - Aqtau" }, { "id": "Asia/Aqtobe", "label": "UTC +5 - Aqtobe" }, { "id": "Asia/Ashgabat", "label": "UTC +5 - Ashgabat" }, { "id": "Asia/Atyrau", "label": "UTC +5 - Atyrau" }, { "id": "Asia/Dushanbe", "label": "UTC +5 - Dushanbe" }, { "id": "Asia/Karachi", "label": "UTC +5 - Karachi" }, { "id": "Asia/Oral", "label": "UTC +5 - Oral" }, { "id": "Asia/Qostanay", "label": "UTC +5 - Qostanay" }, { "id": "Asia/Qyzylorda", "label": "UTC +5 - Qyzylorda" }, { "id": "Asia/Samarkand", "label": "UTC +5 - Samarkand" }, { "id": "Asia/Tashkent", "label": "UTC +5 - Tashkent" }, { "id": "Asia/Yekaterinburg", "label": "UTC +5 - Yekaterinburg" }, { "id": "Indian/Kerguelen", "label": "UTC +5 - Kerguelen" }, { "id": "Indian/Maldives", "label": "UTC +5 - Maldives" }, { "id": "Asia/Kabul", "label": "UTC +4:30 - Kabul" }, { "id": "Asia/Baku", "label": "UTC +4 - Baku" }, { "id": "Asia/Dubai", "label": "UTC +4 - Dubai" }, { "id": "Asia/Muscat", "label": "UTC +4 - Muscat" }, { "id": "Asia/Tbilisi", "label": "UTC +4 - Tbilisi" }, { "id": "Asia/Yerevan", "label": "UTC +4 - Yerevan" }, { "id": "Europe/Astrakhan", "label": "UTC +4 - Astrakhan" }, { "id": "Europe/Samara", "label": "UTC +4 - Samara" }, { "id": "Europe/Saratov", "label": "UTC +4 - Saratov" }, { "id": "Europe/Ulyanovsk", "label": "UTC +4 - Ulyanovsk" }, { "id": "Indian/Mahe", "label": "UTC +4 - Mahe" }, { "id": "Indian/Mauritius", "label": "UTC +4 - Mauritius" }, { "id": "Indian/Reunion", "label": "UTC +4 - Reunion" }, { "id": "Asia/Tehran", "label": "UTC +3:30 - Tehran" }, { "id": "Africa/Addis_Ababa", "label": "UTC +3 - Addis Ababa" }, { "id": "Africa/Asmera", "label": "UTC +3 - Asmera" }, { "id": "Africa/Dar_es_Salaam", "label": "UTC +3 - Dar es Salaam" }, { "id": "Africa/Djibouti", "label": "UTC +3 - Djibouti" }, { "id": "Africa/Kampala", "label": "UTC +3 - Kampala" }, { "id": "Africa/Mogadishu", "label": "UTC +3 - Mogadishu" }, { "id": "Africa/Nairobi", "label": "UTC +3 - Nairobi" }, { "id": "Antarctica/Syowa", "label": "UTC +3 - Syowa" }, { "id": "Asia/Aden", "label": "UTC +3 - Aden" }, { "id": "Asia/Amman", "label": "UTC +3 - Amman" }, { "id": "Asia/Baghdad", "label": "UTC +3 - Baghdad" }, { "id": "Asia/Bahrain", "label": "UTC +3 - Bahrain" }, { "id": "Asia/Damascus", "label": "UTC +3 - Damascus" }, { "id": "Asia/Kuwait", "label": "UTC +3 - Kuwait" }, { "id": "Asia/Qatar", "label": "UTC +3 - Qatar" }, { "id": "Asia/Riyadh", "label": "UTC +3 - Riyadh" }, { "id": "Europe/Istanbul", "label": "UTC +3 - Istanbul" }, { "id": "Europe/Kirov", "label": "UTC +3 - Kirov" }, { "id": "Europe/Minsk", "label": "UTC +3 - Minsk" }, { "id": "Europe/Moscow", "label": "UTC +3 - Moscow" }, { "id": "Europe/Simferopol", "label": "UTC +3 - Simferopol" }, { "id": "Europe/Volgograd", "label": "UTC +3 - Volgograd" }, { "id": "Indian/Antananarivo", "label": "UTC +3 - Antananarivo" }, { "id": "Indian/Comoro", "label": "UTC +3 - Comoro" }, { "id": "Indian/Mayotte", "label": "UTC +3 - Mayotte" }, { "id": "Africa/Blantyre", "label": "UTC +2 - Blantyre" }, { "id": "Africa/Bujumbura", "label": "UTC +2 - Bujumbura" }, { "id": "Africa/Cairo", "label": "UTC +2 - Cairo" }, { "id": "Africa/Gaborone", "label": "UTC +2 - Gaborone" }, { "id": "Africa/Harare", "label": "UTC +2 - Harare" }, { "id": "Africa/Johannesburg", "label": "UTC +2 - Johannesburg" }, { "id": "Africa/Juba", "label": "UTC +2 - Juba" }, { "id": "Africa/Khartoum", "label": "UTC +2 - Khartoum" }, { "id": "Africa/Kigali", "label": "UTC +2 - Kigali" }, { "id": "Africa/Lubumbashi", "label": "UTC +2 - Lubumbashi" }, { "id": "Africa/Lusaka", "label": "UTC +2 - Lusaka" }, { "id": "Africa/Maputo", "label": "UTC +2 - Maputo" }, { "id": "Africa/Maseru", "label": "UTC +2 - Maseru" }, { "id": "Africa/Mbabane", "label": "UTC +2 - Mbabane" }, { "id": "Africa/Tripoli", "label": "UTC +2 - Tripoli" }, { "id": "Africa/Windhoek", "label": "UTC +2 - Windhoek" }, { "id": "Asia/Beirut", "label": "UTC +2 - Beirut" }, { "id": "Asia/Famagusta", "label": "UTC +2 - Famagusta" }, { "id": "Asia/Gaza", "label": "UTC +2 - Gaza" }, { "id": "Asia/Hebron", "label": "UTC +2 - Hebron" }, { "id": "Asia/Jerusalem", "label": "UTC +2 - Jerusalem" }, { "id": "Asia/Nicosia", "label": "UTC +2 - Nicosia" }, { "id": "Europe/Athens", "label": "UTC +2 - Athens" }, { "id": "Europe/Bucharest", "label": "UTC +2 - Bucharest" }, { "id": "Europe/Chisinau", "label": "UTC +2 - Chisinau" }, { "id": "Europe/Helsinki", "label": "UTC +2 - Helsinki" }, { "id": "Europe/Kaliningrad", "label": "UTC +2 - Kaliningrad" }, { "id": "Europe/Kiev", "label": "UTC +2 - Kiev" }, { "id": "Europe/Mariehamn", "label": "UTC +2 - Mariehamn" }, { "id": "Europe/Riga", "label": "UTC +2 - Riga" }, { "id": "Europe/Sofia", "label": "UTC +2 - Sofia" }, { "id": "Europe/Tallinn", "label": "UTC +2 - Tallinn" }, { "id": "Europe/Vilnius", "label": "UTC +2 - Vilnius" }, { "id": "Africa/Algiers", "label": "UTC +1 - Algiers" }, { "id": "Africa/Bangui", "label": "UTC +1 - Bangui" }, { "id": "Africa/Brazzaville", "label": "UTC +1 - Brazzaville" }, { "id": "Africa/Casablanca", "label": "UTC +1 - Casablanca" }, { "id": "Africa/Ceuta", "label": "UTC +1 - Ceuta" }, { "id": "Africa/Douala", "label": "UTC +1 - Douala" }, { "id": "Africa/El_Aaiun", "label": "UTC +1 - El Aaiun" }, { "id": "Africa/Kinshasa", "label": "UTC +1 - Kinshasa" }, { "id": "Africa/Lagos", "label": "UTC +1 - Lagos" }, { "id": "Africa/Libreville", "label": "UTC +1 - Libreville" }, { "id": "Africa/Luanda", "label": "UTC +1 - Luanda" }, { "id": "Africa/Malabo", "label": "UTC +1 - Malabo" }, { "id": "Africa/Ndjamena", "label": "UTC +1 - Ndjamena" }, { "id": "Africa/Niamey", "label": "UTC +1 - Niamey" }, { "id": "Africa/Porto-Novo", "label": "UTC +1 - Porto-Novo" }, { "id": "Africa/Tunis", "label": "UTC +1 - Tunis" }, { "id": "Arctic/Longyearbyen", "label": "UTC +1 - Longyearbyen" }, { "id": "Europe/Amsterdam", "label": "UTC +1 - Amsterdam" }, { "id": "Europe/Andorra", "label": "UTC +1 - Andorra" }, { "id": "Europe/Belgrade", "label": "UTC +1 - Belgrade" }, { "id": "Europe/Berlin", "label": "UTC +1 - Berlin" }, { "id": "Europe/Bratislava", "label": "UTC +1 - Bratislava" }, { "id": "Europe/Brussels", "label": "UTC +1 - Brussels" }, { "id": "Europe/Budapest", "label": "UTC +1 - Budapest" }, { "id": "Europe/Busingen", "label": "UTC +1 - Busingen" }, { "id": "Europe/Copenhagen", "label": "UTC +1 - Copenhagen" }, { "id": "Europe/Gibraltar", "label": "UTC +1 - Gibraltar" }, { "id": "Europe/Ljubljana", "label": "UTC +1 - Ljubljana" }, { "id": "Europe/Luxembourg", "label": "UTC +1 - Luxembourg" }, { "id": "Europe/Madrid", "label": "UTC +1 - Madrid" }, { "id": "Europe/Malta", "label": "UTC +1 - Malta" }, { "id": "Europe/Monaco", "label": "UTC +1 - Monaco" }, { "id": "Europe/Oslo", "label": "UTC +1 - Oslo" }, { "id": "Europe/Paris", "label": "UTC +1 - Paris" }, { "id": "Europe/Podgorica", "label": "UTC +1 - Podgorica" }, { "id": "Europe/Prague", "label": "UTC +1 - Prague" }, { "id": "Europe/Rome", "label": "UTC +1 - Rome" }, { "id": "Europe/San_Marino", "label": "UTC +1 - San Marino" }, { "id": "Europe/Sarajevo", "label": "UTC +1 - Sarajevo" }, { "id": "Europe/Skopje", "label": "UTC +1 - Skopje" }, { "id": "Europe/Stockholm", "label": "UTC +1 - Stockholm" }, { "id": "Europe/Tirane", "label": "UTC +1 - Tirane" }, { "id": "Europe/Vaduz", "label": "UTC +1 - Vaduz" }, { "id": "Europe/Vatican", "label": "UTC +1 - Vatican" }, { "id": "Europe/Vienna", "label": "UTC +1 - Vienna" }, { "id": "Europe/Warsaw", "label": "UTC +1 - Warsaw" }, { "id": "Europe/Zagreb", "label": "UTC +1 - Zagreb" }, { "id": "Europe/Zurich", "label": "UTC +1 - Zurich" }, { "id": "Africa/Abidjan", "label": "UTC  - Abidjan" }, { "id": "Africa/Accra", "label": "UTC  - Accra" }, { "id": "Africa/Bamako", "label": "UTC  - Bamako" }, { "id": "Africa/Banjul", "label": "UTC  - Banjul" }, { "id": "Africa/Bissau", "label": "UTC  - Bissau" }, { "id": "Africa/Conakry", "label": "UTC  - Conakry" }, { "id": "Africa/Dakar", "label": "UTC  - Dakar" }, { "id": "Africa/Freetown", "label": "UTC  - Freetown" }, { "id": "Africa/Lome", "label": "UTC  - Lome" }, { "id": "Africa/Monrovia", "label": "UTC  - Monrovia" }, { "id": "Africa/Nouakchott", "label": "UTC  - Nouakchott" }, { "id": "Africa/Ouagadougou", "label": "UTC  - Ouagadougou" }, { "id": "Africa/Sao_Tome", "label": "UTC  - Sao Tome" }, { "id": "America/Danmarkshavn", "label": "UTC  - Danmarkshavn" }, { "id": "Antarctica/Troll", "label": "UTC  - Troll" }, { "id": "Atlantic/Canary", "label": "UTC  - Canary" }, { "id": "Atlantic/Faeroe", "label": "UTC  - Faeroe" }, { "id": "Atlantic/Madeira", "label": "UTC  - Madeira" }, { "id": "Atlantic/Reykjavik", "label": "UTC  - Reykjavik" }, { "id": "Atlantic/St_Helena", "label": "UTC  - St Helena" }, { "id": "Europe/Dublin", "label": "UTC  - Dublin" }, { "id": "Europe/Guernsey", "label": "UTC  - Guernsey" }, { "id": "Europe/Isle_of_Man", "label": "UTC  - Isle of Man" }, { "id": "Europe/Jersey", "label": "UTC  - Jersey" }, { "id": "Europe/Lisbon", "label": "UTC  - Lisbon" }, { "id": "Europe/London", "label": "UTC  - London" }, { "id": "Atlantic/Azores", "label": "UTC -1 - Azores" }, { "id": "Atlantic/Cape_Verde", "label": "UTC -1 - Cape Verde" }, { "id": "America/Godthab", "label": "UTC -2 - Godthab" }, { "id": "America/Noronha", "label": "UTC -2 - Noronha" }, { "id": "America/Scoresbysund", "label": "UTC -2 - Scoresbysund" }, { "id": "Atlantic/South_Georgia", "label": "UTC -2 - South Georgia" }, { "id": "America/Araguaina", "label": "UTC -3 - Araguaina" }, { "id": "America/Argentina/La_Rioja", "label": "UTC -3 - La Rioja" }, { "id": "America/Argentina/Rio_Gallegos", "label": "UTC -3 - Rio Gallegos" }, { "id": "America/Argentina/Salta", "label": "UTC -3 - Salta" }, { "id": "America/Argentina/San_Juan", "label": "UTC -3 - San Juan" }, { "id": "America/Argentina/San_Luis", "label": "UTC -3 - San Luis" }, { "id": "America/Argentina/Tucuman", "label": "UTC -3 - Tucuman" }, { "id": "America/Argentina/Ushuaia", "label": "UTC -3 - Ushuaia" }, { "id": "America/Asuncion", "label": "UTC -3 - Asuncion" }, { "id": "America/Bahia", "label": "UTC -3 - Bahia" }, { "id": "America/Belem", "label": "UTC -3 - Belem" }, { "id": "America/Buenos_Aires", "label": "UTC -3 - Buenos Aires" }, { "id": "America/Catamarca", "label": "UTC -3 - Catamarca" }, { "id": "America/Cayenne", "label": "UTC -3 - Cayenne" }, { "id": "America/Cordoba", "label": "UTC -3 - Cordoba" }, { "id": "America/Coyhaique", "label": "UTC -3 - Coyhaique" }, { "id": "America/Fortaleza", "label": "UTC -3 - Fortaleza" }, { "id": "America/Jujuy", "label": "UTC -3 - Jujuy" }, { "id": "America/Maceio", "label": "UTC -3 - Maceio" }, { "id": "America/Mendoza", "label": "UTC -3 - Mendoza" }, { "id": "America/Miquelon", "label": "UTC -3 - Miquelon" }, { "id": "America/Montevideo", "label": "UTC -3 - Montevideo" }, { "id": "America/Paramaribo", "label": "UTC -3 - Paramaribo" }, { "id": "America/Punta_Arenas", "label": "UTC -3 - Punta Arenas" }, { "id": "America/Recife", "label": "UTC -3 - Recife" }, { "id": "America/Santarem", "label": "UTC -3 - Santarem" }, { "id": "America/Santiago", "label": "UTC -3 - Santiago" }, { "id": "America/Sao_Paulo", "label": "UTC -3 - Sao Paulo" }, { "id": "Antarctica/Palmer", "label": "UTC -3 - Palmer" }, { "id": "Antarctica/Rothera", "label": "UTC -3 - Rothera" }, { "id": "Atlantic/Stanley", "label": "UTC -3 - Stanley" }, { "id": "America/St_Johns", "label": "UTC -3:30 - St Johns" }, { "id": "America/Anguilla", "label": "UTC -4 - Anguilla" }, { "id": "America/Antigua", "label": "UTC -4 - Antigua" }, { "id": "America/Aruba", "label": "UTC -4 - Aruba" }, { "id": "America/Barbados", "label": "UTC -4 - Barbados" }, { "id": "America/Blanc-Sablon", "label": "UTC -4 - Blanc-Sablon" }, { "id": "America/Boa_Vista", "label": "UTC -4 - Boa Vista" }, { "id": "America/Campo_Grande", "label": "UTC -4 - Campo Grande" }, { "id": "America/Caracas", "label": "UTC -4 - Caracas" }, { "id": "America/Cuiaba", "label": "UTC -4 - Cuiaba" }, { "id": "America/Curacao", "label": "UTC -4 - Curacao" }, { "id": "America/Dominica", "label": "UTC -4 - Dominica" }, { "id": "America/Glace_Bay", "label": "UTC -4 - Glace Bay" }, { "id": "America/Goose_Bay", "label": "UTC -4 - Goose Bay" }, { "id": "America/Grenada", "label": "UTC -4 - Grenada" }, { "id": "America/Guadeloupe", "label": "UTC -4 - Guadeloupe" }, { "id": "America/Guyana", "label": "UTC -4 - Guyana" }, { "id": "America/Halifax", "label": "UTC -4 - Halifax" }, { "id": "America/Kralendijk", "label": "UTC -4 - Kralendijk" }, { "id": "America/La_Paz", "label": "UTC -4 - La Paz" }, { "id": "America/Lower_Princes", "label": "UTC -4 - Lower Princes" }, { "id": "America/Manaus", "label": "UTC -4 - Manaus" }, { "id": "America/Marigot", "label": "UTC -4 - Marigot" }, { "id": "America/Martinique", "label": "UTC -4 - Martinique" }, { "id": "America/Moncton", "label": "UTC -4 - Moncton" }, { "id": "America/Montserrat", "label": "UTC -4 - Montserrat" }, { "id": "America/Port_of_Spain", "label": "UTC -4 - Port of Spain" }, { "id": "America/Porto_Velho", "label": "UTC -4 - Porto Velho" }, { "id": "America/Puerto_Rico", "label": "UTC -4 - Puerto Rico" }, { "id": "America/Santo_Domingo", "label": "UTC -4 - Santo Domingo" }, { "id": "America/St_Barthelemy", "label": "UTC -4 - St Barthelemy" }, { "id": "America/St_Kitts", "label": "UTC -4 - St Kitts" }, { "id": "America/St_Lucia", "label": "UTC -4 - St Lucia" }, { "id": "America/St_Thomas", "label": "UTC -4 - St Thomas" }, { "id": "America/St_Vincent", "label": "UTC -4 - St Vincent" }, { "id": "America/Thule", "label": "UTC -4 - Thule" }, { "id": "America/Tortola", "label": "UTC -4 - Tortola" }, { "id": "Atlantic/Bermuda", "label": "UTC -4 - Bermuda" }, { "id": "America/Bogota", "label": "UTC -5 - Bogota" }, { "id": "America/Cancun", "label": "UTC -5 - Cancun" }, { "id": "America/Cayman", "label": "UTC -5 - Cayman" }, { "id": "America/Coral_Harbour", "label": "UTC -5 - Coral Harbour" }, { "id": "America/Detroit", "label": "UTC -5 - Detroit" }, { "id": "America/Eirunepe", "label": "UTC -5 - Eirunepe" }, { "id": "America/Grand_Turk", "label": "UTC -5 - Grand Turk" }, { "id": "America/Guayaquil", "label": "UTC -5 - Guayaquil" }, { "id": "America/Havana", "label": "UTC -5 - Havana" }, { "id": "America/Indiana/Marengo", "label": "UTC -5 - Marengo" }, { "id": "America/Indiana/Petersburg", "label": "UTC -5 - Petersburg" }, { "id": "America/Indiana/Vevay", "label": "UTC -5 - Vevay" }, { "id": "America/Indiana/Vincennes", "label": "UTC -5 - Vincennes" }, { "id": "America/Indiana/Winamac", "label": "UTC -5 - Winamac" }, { "id": "America/Indianapolis", "label": "UTC -5 - Indianapolis" }, { "id": "America/Iqaluit", "label": "UTC -5 - Iqaluit" }, { "id": "America/Jamaica", "label": "UTC -5 - Jamaica" }, { "id": "America/Kentucky/Monticello", "label": "UTC -5 - Monticello" }, { "id": "America/Lima", "label": "UTC -5 - Lima" }, { "id": "America/Louisville", "label": "UTC -5 - Louisville" }, { "id": "America/Nassau", "label": "UTC -5 - Nassau" }, { "id": "America/New_York", "label": "UTC -5 - New York" }, { "id": "America/Panama", "label": "UTC -5 - Panama" }, { "id": "America/Port-au-Prince", "label": "UTC -5 - Port-au-Prince" }, { "id": "America/Rio_Branco", "label": "UTC -5 - Rio Branco" }, { "id": "America/Toronto", "label": "UTC -5 - Toronto" }, { "id": "Pacific/Easter", "label": "UTC -5 - Easter" }, { "id": "America/Bahia_Banderas", "label": "UTC -6 - Bahia Banderas" }, { "id": "America/Belize", "label": "UTC -6 - Belize" }, { "id": "America/Chicago", "label": "UTC -6 - Chicago" }, { "id": "America/Chihuahua", "label": "UTC -6 - Chihuahua" }, { "id": "America/Costa_Rica", "label": "UTC -6 - Costa Rica" }, { "id": "America/El_Salvador", "label": "UTC -6 - El Salvador" }, { "id": "America/Guatemala", "label": "UTC -6 - Guatemala" }, { "id": "America/Indiana/Knox", "label": "UTC -6 - Knox" }, { "id": "America/Indiana/Tell_City", "label": "UTC -6 - Tell City" }, { "id": "America/Managua", "label": "UTC -6 - Managua" }, { "id": "America/Matamoros", "label": "UTC -6 - Matamoros" }, { "id": "America/Menominee", "label": "UTC -6 - Menominee" }, { "id": "America/Merida", "label": "UTC -6 - Merida" }, { "id": "America/Mexico_City", "label": "UTC -6 - Mexico City" }, { "id": "America/Monterrey", "label": "UTC -6 - Monterrey" }, { "id": "America/North_Dakota/Beulah", "label": "UTC -6 - Beulah" }, { "id": "America/North_Dakota/Center", "label": "UTC -6 - Center" }, { "id": "America/North_Dakota/New_Salem", "label": "UTC -6 - New Salem" }, { "id": "America/Ojinaga", "label": "UTC -6 - Ojinaga" }, { "id": "America/Rankin_Inlet", "label": "UTC -6 - Rankin Inlet" }, { "id": "America/Regina", "label": "UTC -6 - Regina" }, { "id": "America/Resolute", "label": "UTC -6 - Resolute" }, { "id": "America/Swift_Current", "label": "UTC -6 - Swift Current" }, { "id": "America/Tegucigalpa", "label": "UTC -6 - Tegucigalpa" }, { "id": "America/Winnipeg", "label": "UTC -6 - Winnipeg" }, { "id": "Pacific/Galapagos", "label": "UTC -6 - Galapagos" }, { "id": "America/Boise", "label": "UTC -7 - Boise" }, { "id": "America/Cambridge_Bay", "label": "UTC -7 - Cambridge Bay" }, { "id": "America/Ciudad_Juarez", "label": "UTC -7 - Ciudad Juarez" }, { "id": "America/Creston", "label": "UTC -7 - Creston" }, { "id": "America/Dawson", "label": "UTC -7 - Dawson" }, { "id": "America/Dawson_Creek", "label": "UTC -7 - Dawson Creek" }, { "id": "America/Denver", "label": "UTC -7 - Denver" }, { "id": "America/Edmonton", "label": "UTC -7 - Edmonton" }, { "id": "America/Fort_Nelson", "label": "UTC -7 - Fort Nelson" }, { "id": "America/Hermosillo", "label": "UTC -7 - Hermosillo" }, { "id": "America/Inuvik", "label": "UTC -7 - Inuvik" }, { "id": "America/Mazatlan", "label": "UTC -7 - Mazatlan" }, { "id": "America/Phoenix", "label": "UTC -7 - Phoenix" }, { "id": "America/Whitehorse", "label": "UTC -7 - Whitehorse" }, { "id": "America/Los_Angeles", "label": "UTC -8 - Los Angeles" }, { "id": "America/Tijuana", "label": "UTC -8 - Tijuana" }, { "id": "America/Vancouver", "label": "UTC -8 - Vancouver" }, { "id": "Pacific/Pitcairn", "label": "UTC -8 - Pitcairn" }, { "id": "America/Anchorage", "label": "UTC -9 - Anchorage" }, { "id": "America/Juneau", "label": "UTC -9 - Juneau" }, { "id": "America/Metlakatla", "label": "UTC -9 - Metlakatla" }, { "id": "America/Nome", "label": "UTC -9 - Nome" }, { "id": "America/Sitka", "label": "UTC -9 - Sitka" }, { "id": "America/Yakutat", "label": "UTC -9 - Yakutat" }, { "id": "Pacific/Gambier", "label": "UTC -9 - Gambier" }, { "id": "Pacific/Marquesas", "label": "UTC -9:30 - Marquesas" }, { "id": "America/Adak", "label": "UTC -10 - Adak" }, { "id": "Pacific/Honolulu", "label": "UTC -10 - Honolulu" }, { "id": "Pacific/Rarotonga", "label": "UTC -10 - Rarotonga" }, { "id": "Pacific/Tahiti", "label": "UTC -10 - Tahiti" }, { "id": "Pacific/Midway", "label": "UTC -11 - Midway" }, { "id": "Pacific/Niue", "label": "UTC -11 - Niue" }, { "id": "Pacific/Pago_Pago", "label": "UTC -11 - Pago Pago" }];
+
+        // --- COUNTDOWN LOGIC ---
+
+        // --- HELPERS ---
+        // --- CONFIGURATION ---
+        const TARGET_YEAR = 2026;
+        const SIMULATION_OFFSET_HOURS = 0; // Change this to simulate time passing (e.g. 130 to see the middle of the marathon)
+
+        // --- HELPERS ---
+        function getTimeUntilNewYear(timezone) {
+            const now = new Date(new Date().getTime() + (SIMULATION_OFFSET_HOURS * 3600 * 1000));
+
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: 'numeric', minute: 'numeric', second: 'numeric',
+                hour12: false
+            });
+
+            const parts = formatter.formatToParts(now);
+            const d = {};
+            parts.forEach(p => d[p.type] = p.value);
+
+            const tzTimestamp = Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute, d.second);
+            const targetTimestamp = Date.UTC(TARGET_YEAR, 0, 1, 0, 0, 0);
+
+            return targetTimestamp - tzTimestamp;
+        }
+
+        function formatTime(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            return { h, m, s, totalH: h };
+        }
+
+        function updateClock(idPrefix, ms) {
+            const t = formatTime(Math.max(0, ms));
+            document.getElementById(`${idPrefix}-h`).innerHTML = t.h;
+            document.getElementById(`${idPrefix}-m`).innerHTML = t.m;
+            document.getElementById(`${idPrefix}-s`).innerHTML = t.s;
+        }
+
+        let lastPassedCount = -1;
+
+        function update() {
+            const all = timezones.map(tz => {
+                const ms = getTimeUntilNewYear(tz.id);
+                return { ...tz, ms };
+            });
+
+            const upcoming = all.filter(tz => tz.ms > 1000).sort((a, b) => a.ms - b.ms);
+            const passed = all.filter(tz => tz.ms <= 1000).sort((a, b) => b.ms - a.ms);
+
+            if (lastPassedCount !== -1 && passed.length > lastPassedCount) {
+                triggerCelebration();
+            }
+            lastPassedCount = passed.length;
+
+            document.getElementById('passed-count').innerHTML = passed.length;
+            document.getElementById('remaining-count').innerHTML = upcoming.length;
+
+            if (upcoming[0]) {
+                document.getElementById('label-main').innerText = upcoming[0].label;
+                updateClock('main', upcoming[0].ms);
+            }
+            if (upcoming[1]) {
+                document.getElementById('label-sub1').innerText = upcoming[1].label;
+                updateClock('sub1', upcoming[1].ms);
+            }
+            if (upcoming[2]) {
+                document.getElementById('label-sub2').innerText = upcoming[2].label;
+                updateClock('sub2', upcoming[2].ms);
+            }
+
+            updateTicker(passed);
+            updateSidebars(upcoming, passed);
+
+            const lastTZ = timezones[timezones.length - 1];
+            const msUntilEnd = getTimeUntilNewYear(lastTZ.id);
+            const realProgress = (passed.length / timezones.length) * 100;
+
+            document.getElementById('percent-val').innerHTML = realProgress.toFixed(2);
+            document.getElementById('percent-bar').style.width = `${realProgress}%`;
+
+            const endT = formatTime(Math.max(0, msUntilEnd));
+            document.getElementById('marathon-total-h').innerHTML = endT.totalH;
+            document.getElementById('marathon-total-m').innerHTML = endT.m;
+        }
+
+        function triggerCelebration() {
+            const flash = document.getElementById('celebration-flash');
+            flash.style.opacity = '1';
+            setTimeout(() => flash.style.opacity = '0', 500);
+            flash.style.transition = 'opacity 0.5s ease';
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.5), i * 100);
+            }
+        }
+
+        function updateTicker(passed) {
+            const ticker = document.getElementById('celebrations-ticker');
+            if (ticker.children.length === 0 && passed.length > 0) {
+                const content = passed.slice(0, 10).map(tz => `<div class="ticker-city"><span>2026</span> ${tz.label}</div>`).join(' • ');
+                ticker.innerHTML = content + " • " + content;
+            }
+        }
+
+        function updateSidebars(upcoming, passed) {
+            const upEl = document.getElementById('upcoming-cities');
+            upEl.innerHTML = upcoming.slice(0, 5).map(tz => `
+                <div class="city-item upcoming">
+                    <div class="city-name">${tz.label}</div>
+                    <div class="city-time">Dans ${Math.floor(tz.ms / 60000)} min</div>
+                </div>
+            `).join('');
+
+            const passEl = document.getElementById('passed-cities');
+            passEl.innerHTML = passed.slice(0, 3).map(tz => `
+                <div class="city-item">
+                    <div class="city-name">${tz.label}</div>
+                    <div class="city-time">Maintenant en 2026 !</div>
+                </div>
+            `).join('');
+        }
+
+        setInterval(update, 1000);
+        update();
+
+        // --- FIREWORKS ANIMATION ---
+        const canvas = document.getElementById('background-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let particles = [];
+        const colors = ['#ff0044', '#00ffcc', '#ffcc00', '#ffffff', '#ff00ff', '#0099ff'];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 8;
+                this.speedY = (Math.random() - 0.5) * 8;
+                this.gravity = 0.05;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.015 + 0.005;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity;
+                this.alpha -= this.decay;
+            }
+        }
+
+        function createFirework(x, y) {
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles = particles.filter(p => p.alpha > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            if (Math.random() < 0.03) {
+                createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.6);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
