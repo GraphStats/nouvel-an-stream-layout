@@ -447,24 +447,29 @@
 
         // --- HELPERS ---
         function getTimeUntilNewYear(timezone) {
-            const targetYear = 2026;
-            const now = new Date();
+            try {
+                const targetYear = 2026;
+                const now = new Date();
 
-            const formatter = new Intl.DateTimeFormat('en-US', {
-                timeZone: timezone,
-                year: 'numeric', month: 'numeric', day: 'numeric',
-                hour: 'numeric', minute: 'numeric', second: 'numeric',
-                hour12: false
-            });
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: timezone,
+                    year: 'numeric', month: 'numeric', day: 'numeric',
+                    hour: 'numeric', minute: 'numeric', second: 'numeric',
+                    hour12: false
+                });
 
-            const parts = formatter.formatToParts(now);
-            const d = {};
-            parts.forEach(p => d[p.type] = p.value);
+                const parts = formatter.formatToParts(now);
+                const d = {};
+                parts.forEach(p => d[p.type] = p.value);
 
-            const tzTimestamp = Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute, d.second);
-            const targetTimestamp = Date.UTC(targetYear, 0, 1, 0, 0, 0);
+                const tzTimestamp = Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute, d.second);
+                const targetTimestamp = Date.UTC(targetYear, 0, 1, 0, 0, 0);
 
-            return targetTimestamp - tzTimestamp;
+                return targetTimestamp - tzTimestamp;
+            } catch (e) {
+                console.warn(`Timezone error for ${timezone}:`, e);
+                return 8640000000; // Return huge positive number (upcoming) fallback
+            }
         }
 
         function formatTime(ms) {
