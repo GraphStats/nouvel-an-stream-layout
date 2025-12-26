@@ -446,30 +446,36 @@
         // --- COUNTDOWN LOGIC ---
 
         // --- HELPERS ---
-        function getTimeUntilNewYear(timezone) {
-            try {
-                const targetYear = 2026;
-                const now = new Date();
+        function parseOffsetMs(label) {
+            // Extracts offset from format like "UTC +14 - ...", "UTC -5 - ...", "UTC  - ..."
+            const prefix = label.split(' - ')[0].replace('UTC', '').trim();
+            if (!prefix) return 0; // Case "UTC  - ..."
 
-                const formatter = new Intl.DateTimeFormat('en-US', {
-                    timeZone: timezone,
-                    year: 'numeric', month: 'numeric', day: 'numeric',
-                    hour: 'numeric', minute: 'numeric', second: 'numeric',
-                    hour12: false
-                });
-
-                const parts = formatter.formatToParts(now);
-                const d = {};
-                parts.forEach(p => d[p.type] = p.value);
-
-                const tzTimestamp = Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute, d.second);
-                const targetTimestamp = Date.UTC(targetYear, 0, 1, 0, 0, 0);
-
-                return targetTimestamp - tzTimestamp;
-            } catch (e) {
-                console.warn(`Timezone error for ${timezone}:`, e);
-                return 8640000000; // Return huge positive number (upcoming) fallback
+            let sign = 1;
+            let timeStr = prefix;
+            if (prefix.startsWith('-')) {
+                sign = -1;
+                timeStr = prefix.substring(1);
+            } else if (prefix.startsWith('+')) {
+                sign = 1;
+                timeStr = prefix.substring(1);
             }
+
+            const parts = timeStr.split(':');
+            const hours = parseInt(parts[0], 10);
+            const minutes = parts[1] ? parseInt(parts[1], 10) : 0;
+            return sign * ((hours * 3600000) + (minutes * 60000));
+        }
+
+        function getTimeUntilNewYear(label) {
+            const offsetMs = parseOffsetMs(label);
+            const targetUTC = Date.UTC(2026, 0, 1, 0, 0, 0); // 1 Jan 2026 00:00 UTC
+            // The event happens when Local Time is 00:00. 
+            // Local 00:00 = UTC 00:00 - Offset.
+            // So Target in UTC is:
+            const targetTimestamp = targetUTC - offsetMs;
+            const now = Date.now();
+            return targetTimestamp - now;
         }
 
         function formatTime(ms) {
@@ -491,7 +497,7 @@
 
         function update() {
             const all = timezones.map(tz => {
-                const ms = getTimeUntilNewYear(tz.id);
+                const ms = getTimeUntilNewYear(tz.label);
                 return { ...tz, ms };
             });
 
@@ -542,7 +548,7 @@
                 }
             } else {
                 const lastTZ = timezones[timezones.length - 1];
-                const msUntilEnd = getTimeUntilNewYear(lastTZ.id);
+                const msUntilEnd = getTimeUntilNewYear(lastTZ.label);
                 const eventProgress = (passed.length / timezones.length) * 100;
 
                 document.getElementById('marathon-label-text').innerText = "ÉVÈNEMENT MONDIAL";
