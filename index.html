@@ -445,13 +445,9 @@
         // --- COUNTDOWN LOGIC ---
 
         // --- HELPERS ---
-        // --- CONFIGURATION ---
-        const TARGET_YEAR = 2026;
-        const SIMULATION_OFFSET_HOURS = 125; // Change this to simulate time passing (e.g. 130 to see the middle of the marathon)
-
-        // --- HELPERS ---
         function getTimeUntilNewYear(timezone) {
-            const now = new Date(new Date().getTime() + (SIMULATION_OFFSET_HOURS * 3600 * 1000));
+            const targetYear = 2026;
+            const now = new Date();
 
             const formatter = new Intl.DateTimeFormat('en-US', {
                 timeZone: timezone,
@@ -465,7 +461,7 @@
             parts.forEach(p => d[p.type] = p.value);
 
             const tzTimestamp = Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute, d.second);
-            const targetTimestamp = Date.UTC(TARGET_YEAR, 0, 1, 0, 0, 0);
+            const targetTimestamp = Date.UTC(targetYear, 0, 1, 0, 0, 0);
 
             return targetTimestamp - tzTimestamp;
         }
@@ -475,7 +471,7 @@
             const h = Math.floor(totalSec / 3600);
             const m = Math.floor((totalSec % 3600) / 60);
             const s = totalSec % 60;
-            return { h, m, s, totalH: h };
+            return { h, m, s, totalH: h + (Math.floor(ms / (1000 * 60 * 60 * 24)) * 24) };
         }
 
         function updateClock(idPrefix, ms) {
