@@ -517,6 +517,33 @@
             letter-spacing: 1px;
             font-weight: 300;
         }
+
+        .odometer-digit .odometer-digit-inner {
+            left: 0 !important;
+        }
+
+        /* Hack for population odometer to show 'decimals' */
+        #pop-percent,
+        #pop-2025,
+        #active-pop {
+            position: relative;
+        }
+
+        #pop-percent::after,
+        #pop-2025::after,
+        #active-pop::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 0px;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            transform: translateX(10px);
+            /* Adjust based on font size to place dot */
+            display: none;
+            /* We'll use a better approach with CSS if possible, or just standard formatting */
+        }
     </style>
 </head>
 
@@ -690,17 +717,20 @@
             </div>
 
             <div class="glass-panel stat-box">
-                <div class="stat-val"><span id="pop-percent" class="odometer">0</span>%</div>
+                <div class="stat-val"><span id="pop-percent" class="odometer">0</span><span
+                        style="font-size: 0.8rem; margin-left: 2px;">%</span></div>
                 <div class="stat-label">Pop. 2026</div>
             </div>
 
             <div class="glass-panel stat-box">
-                <div class="stat-val"><span id="pop-2025" class="odometer">0</span>%</div>
+                <div class="stat-val"><span id="pop-2025" class="odometer">0</span><span
+                        style="font-size: 0.8rem; margin-left: 2px;">%</span></div>
                 <div class="stat-label">Pop. 2025</div>
             </div>
 
             <div class="glass-panel stat-box">
-                <div class="stat-val"><span id="active-pop" class="odometer">0</span>%</div>
+                <div class="stat-val"><span id="active-pop" class="odometer">0</span><span
+                        style="font-size: 0.8rem; margin-left: 2px;">%</span></div>
                 <div class="stat-label">Current Pop.</div>
             </div>
 
@@ -769,7 +799,15 @@
                 }
             }
         });
-        const timezones = Object.values(timezonesMap);
+        const timezones = Object.values(timezonesMap).sort((a, b) => {
+            return parseOffsetMs(b.label) - parseOffsetMs(a.label);
+        });
+
+        // Pre-calculate marathon boundaries
+        const allOffsets = rawTimezones.map(tz => parseOffsetMs(tz.label));
+        const minOffset = Math.max(...allOffsets); // UTC+14 is greatest positive
+        const maxOffset = Math.min(...allOffsets); // UTC-11 is greatest negative
+
 
         // --- COUNTDOWN LOGIC ---
 
@@ -850,6 +888,12 @@
             "UTC -1": 0.2, "UTC -2": 0.1, "UTC -3": 4.0, "UTC -3:30": 0.1, "UTC -4": 1.5,
             "UTC -5": 10.0, "UTC -6": 4.0, "UTC -7": 1.0, "UTC -8": 1.5, "UTC -9": 0.1,
             "UTC -9:30": 0.01, "UTC -10": 0.2, "UTC -11": 0.01
+        };
+
+        // Initialize Odometers with custom format
+        window.odometerOptions = {
+            format: '(.ddd)', // This enables decimal support
+            duration: 1000
         };
 
         function updateLocalClock(idPrefix, label) {
@@ -1023,8 +1067,8 @@
                 const targetUTC = Date.UTC(2026, 0, 1, 0, 0, 0);
                 const now = getNow();
 
-                const marathonStart = targetUTC - parseOffsetMs(timezones[0].label);
-                const marathonEnd = targetUTC - parseOffsetMs(timezones[timezones.length - 1].label);
+                const marathonStart = targetUTC - minOffset;
+                const marathonEnd = targetUTC - maxOffset;
 
                 let eventProgress = ((now - marathonStart) / (marathonEnd - marathonStart)) * 100;
                 eventProgress = Math.max(0, Math.min(100, eventProgress));
@@ -1043,8 +1087,8 @@
 
         function updateExtraStats(passed, upcoming, all) {
             const targetUTC = Date.UTC(2026, 0, 1, 0, 0, 0);
-            const marathonStart = targetUTC - parseOffsetMs(timezones[0].label);
-            const marathonEnd = targetUTC - parseOffsetMs(timezones[timezones.length - 1].label);
+            const marathonStart = targetUTC - minOffset;
+            const marathonEnd = targetUTC - maxOffset;
             const now = getNow();
 
             const currentTime = Math.min(now, marathonEnd);
@@ -1086,9 +1130,13 @@
 
             totalPop = Math.min(100, Math.max(0, totalPop));
             activePop = Math.min(100, Math.max(0, activePop));
-            document.getElementById('pop-percent').innerHTML = totalPop.toFixed(1);
-            document.getElementById('pop-2025').innerHTML = (100 - totalPop).toFixed(1);
-            document.getElementById('active-pop').innerHTML = activePop.toFixed(1);
+
+            // Trick Odometer: Use format (ddd.dd) by injecting decimals as integers or using the format option
+            // Actually Odometer.js supports decimals if we use the right format string.
+            // Let's use 2 decimal places for Odometer.
+            document.getElementById('pop-percent').innerHTML = totalPop.toFixed(2);
+            document.getElementById('pop-2025').innerHTML = (100 - totalPop).toFixed(2);
+            document.getElementById('active-pop').innerHTML = activePop.toFixed(2);
 
             // Location Count
             document.getElementById('location-count').innerHTML = passed.length;
