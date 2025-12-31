@@ -87,6 +87,44 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            position: relative;
+            /* Added for absolute positioning of local time */
+        }
+
+        .local-time-display {
+            position: absolute;
+            bottom: 12px;
+            right: 15px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: var(--accent-sec);
+            opacity: 0.8;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            letter-spacing: 1px;
+            font-variant-numeric: tabular-nums;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .local-time-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            opacity: 0.5;
+            color: #fff;
+            letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+
+        .local-time-clock {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            color: var(--accent-sec);
         }
 
         .header-section {
@@ -551,6 +589,11 @@
                         <div style="font-size: 1.5rem; opacity: 0.5;">s</div>
                     </div>
                 </div>
+                <div id="main-local-time" class="local-time-display">
+                    <span class="local-time-label">Local Time</span>
+                    <div class="local-time-clock"><span id="main-lt-h" class="odometer">00</span>:<span id="main-lt-m"
+                            class="odometer">00</span>:<span id="main-lt-s" class="odometer">00</span></div>
+                </div>
             </div>
 
             <div class="glass-panel sub-section" style="grid-area: mid1;">
@@ -564,6 +607,11 @@
                     <div class="sub-clock">:</div>
                     <div id="sub1-s" class="odometer sub-clock">00</div>
                 </div>
+                <div id="sub1-local-time" class="local-time-display">
+                    <span class="local-time-label">Local Time</span>
+                    <div class="local-time-clock"><span id="sub1-lt-h" class="odometer">00</span>:<span id="sub1-lt-m"
+                            class="odometer">00</span>:<span id="sub1-lt-s" class="odometer">00</span></div>
+                </div>
             </div>
 
             <div id="sub2-panel" class="glass-panel sub-section" style="grid-area: mid2;">
@@ -574,6 +622,11 @@
                     <div id="sub2-m" class="odometer sub-clock">00</div>
                     <div class="sub-clock">:</div>
                     <div id="sub2-s" class="odometer sub-clock">00</div>
+                </div>
+                <div id="sub2-local-time" class="local-time-display">
+                    <span class="local-time-label">Local Time</span>
+                    <div class="local-time-clock"><span id="sub2-lt-h" class="odometer">00</span>:<span id="sub2-lt-m"
+                            class="odometer">00</span>:<span id="sub2-lt-s" class="odometer">00</span></div>
                 </div>
                 <div id="stats-2025-board" style="display: none; width: 100%;">
                     <div class="stats-2025-grid">
@@ -797,6 +850,25 @@
             "UTC -9:30": 0.01, "UTC -10": 0.2, "UTC -11": 0.01
         };
 
+        function updateLocalClock(idPrefix, label) {
+            const container = document.getElementById(`${idPrefix}-local-time`);
+            if (!label || label === "---") {
+                container.style.opacity = "0";
+                return;
+            }
+            container.style.opacity = "0.8";
+
+            const offsetMs = parseOffsetMs(label);
+            const localTime = new Date(getNow() + offsetMs);
+            const h = localTime.getUTCHours();
+            const m = localTime.getUTCMinutes();
+            const s = localTime.getUTCSeconds();
+
+            document.getElementById(`${idPrefix}-lt-h`).innerHTML = h;
+            document.getElementById(`${idPrefix}-lt-m`).innerHTML = m;
+            document.getElementById(`${idPrefix}-lt-s`).innerHTML = s;
+        }
+
         function update() {
             const all = timezones.map(tz => {
                 const ms = getTimeUntilNewYear(tz.label);
@@ -824,6 +896,9 @@
 
                 const elapsed = Math.abs(passed[0].ms);
                 updateClock('main', elapsed);
+                updateLocalClock('main', null);
+                updateLocalClock('sub1', null);
+                updateLocalClock('sub2', null);
 
                 // Use a fixed target for 2027
                 const target2027 = Date.UTC(2027, 0, 1, 0, 0, 0);
@@ -862,6 +937,7 @@
                     document.getElementById('label-main').innerText = recentPassed.label;
                     document.getElementById('timer-context-label').innerText = "In 2026 since";
                     updateClock('main', Math.abs(recentPassed.ms));
+                    updateLocalClock('main', recentPassed.label);
 
                     // Update the "Next in..." countdown
                     const switchMs = tenMinutesMs - Math.abs(recentPassed.ms);
@@ -872,17 +948,21 @@
                     if (nextUpcoming) {
                         document.getElementById('label-sub1').innerText = nextUpcoming.label;
                         updateClock('sub1', nextUpcoming.ms);
+                        updateLocalClock('sub1', nextUpcoming.label);
                     } else {
                         document.getElementById('label-sub1').innerText = "---";
                         updateClock('sub1', 0);
+                        updateLocalClock('sub1', null);
                     }
 
                     if (upcoming[1]) {
                         document.getElementById('label-sub2').innerText = upcoming[1].label;
                         updateClock('sub2', upcoming[1].ms);
+                        updateLocalClock('sub2', upcoming[1].label);
                     } else {
                         document.getElementById('label-sub2').innerText = "---";
                         updateClock('sub2', 0);
+                        updateLocalClock('sub2', null);
                     }
                 } else {
                     document.getElementById('switch-timer-container').style.display = 'none';
@@ -891,21 +971,26 @@
                     if (nextUpcoming) {
                         document.getElementById('label-main').innerText = nextUpcoming.label;
                         updateClock('main', nextUpcoming.ms);
+                        updateLocalClock('main', nextUpcoming.label);
                     }
                     if (upcoming[1]) {
                         document.getElementById('label-sub1').innerText = upcoming[1].label;
                         updateClock('sub1', upcoming[1].ms);
+                        updateLocalClock('sub1', upcoming[1].label);
                     } else {
                         document.getElementById('label-sub1').innerText = "---";
                         updateClock('sub1', 0);
+                        updateLocalClock('sub1', null);
                     }
 
                     if (upcoming[2]) {
                         document.getElementById('label-sub2').innerText = upcoming[2].label;
                         updateClock('sub2', upcoming[2].ms);
+                        updateLocalClock('sub2', upcoming[2].label);
                     } else {
                         document.getElementById('label-sub2').innerText = "---";
                         updateClock('sub2', 0);
+                        updateLocalClock('sub2', null);
                     }
                 }
             }
