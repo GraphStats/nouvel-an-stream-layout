@@ -995,7 +995,7 @@
                 // If a city passed less than 10 minutes ago, hold it as the main display
                 const tenMinutesMs = 10 * 60 * 1000;
                 if (recentPassed && Math.abs(recentPassed.ms) < tenMinutesMs) {
-                    document.getElementById('label-main').innerText = recentPassed.label;
+                    document.getElementById('label-main').innerHTML = formatLabelWithFlag(recentPassed.label);
                     document.getElementById('timer-context-label').innerText = "In 2026 since";
                     updateClock('main', Math.abs(recentPassed.ms));
                     updateLocalClock('main', recentPassed.label);
@@ -1007,7 +1007,7 @@
 
                     // Show next upcoming in sub1
                     if (nextUpcoming) {
-                        document.getElementById('label-sub1').innerText = nextUpcoming.label;
+                        document.getElementById('label-sub1').innerHTML = formatLabelWithFlag(nextUpcoming.label);
                         updateClock('sub1', nextUpcoming.ms);
                         updateLocalClock('sub1', nextUpcoming.label);
                     } else {
@@ -1017,7 +1017,7 @@
                     }
 
                     if (upcoming[1]) {
-                        document.getElementById('label-sub2').innerText = upcoming[1].label;
+                        document.getElementById('label-sub2').innerHTML = formatLabelWithFlag(upcoming[1].label);
                         updateClock('sub2', upcoming[1].ms);
                         updateLocalClock('sub2', upcoming[1].label);
                     } else {
